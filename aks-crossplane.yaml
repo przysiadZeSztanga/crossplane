@@ -1,0 +1,66 @@
+# creates k8s cluster on Azure using corssplane and https://marketplace.upbound.io/providers/crossplane-contrib/provider-azure/v0.20.1 as provider
+
+apiVersion: network.azure.crossplane.io/v1alpha3
+kind: Subnet
+metadata:
+  name: demo-crossplane-subnet
+spec:
+  properties:
+    addressPrefix: 10.70.0.0/24
+  providerConfigRef:
+    name: default
+  resourceGroupNameRef:
+    name: demo-test-rg-crossplane
+  virtualNetworkNameRef:
+    name: demo-corssplane-poc-vnet
+
+---
+apiVersion: network.azure.crossplane.io/v1alpha3
+kind: VirtualNetwork
+metadata:
+  name: demo-corssplane-poc-vnet
+spec:
+  location: West Europe
+  properties:
+    addressSpace:
+      addressPrefixes:
+        - 10.70.0.0/20
+  providerConfigRef:
+    name: default
+  resourceGroupNameRef:
+    name: demo-test-rg-crossplane   
+
+
+---
+
+apiVersion: compute.azure.crossplane.io/v1alpha3
+kind: AKSCluster 
+metadata:
+  labels:
+    example: "true"
+  name: demo-crossplane-aks-cluster
+spec:
+  disableRBAC: true
+  dnsNamePrefix: crossplane-aks
+  location: West Europe
+  nodeCount: 1
+  nodeVMSize: Standard_B2s
+  providerConfigRef:
+    name: default
+  resourceGroupNameRef:
+    name: demo-test-rg-crossplane
+  version: 1.23.12
+  vnetSubnetIDRef:
+    name: demo-crossplane-subnet
+  writeConnectionSecretToRef:
+    name: example-secret
+    namespace: crossplane-system
+
+---
+
+apiVersion: azure.crossplane.io/v1alpha3
+kind: ResourceGroup
+metadata:
+ name: demo-test-rg-crossplane
+spec:
+ location: West Europe	 
